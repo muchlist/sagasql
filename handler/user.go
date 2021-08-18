@@ -136,6 +136,9 @@ func (u *userHandler) Find(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
+	if userList == nil {
+		userList = []dto.User{}
+	}
 	return c.JSON(fiber.Map{"error": nil, "data": userList})
 }
 

@@ -17,4 +17,9 @@ var (
 	userDao     = dao.NewUserDao()
 	userService = service.NewUserService(userDao, cryptoUtils, jwt)
 	userHandler = handler.NewUserHandler(userService)
+
+	// Product Domain
+	productDao     = dao.NewProductDao()
+	productService = service.NewProductService(productDao)
+	productHandler = handler.NewProductHandler(productService)
 )

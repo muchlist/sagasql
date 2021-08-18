@@ -3,10 +3,10 @@ package dao
 import (
 	"context"
 	"fmt"
-	"github.com/jackc/pgx/v4"
 	"github.com/muchlist/sagasql/db"
 	"github.com/muchlist/sagasql/dto"
 	"github.com/muchlist/sagasql/utils/rest_err"
+	"github.com/muchlist/sagasql/utils/sql_err"
 )
 
 func NewProductDao() ProductDaoAssumer {
@@ -33,7 +33,7 @@ func (u *productDao) Insert(product dto.Product) (*int64, rest_err.APIError) {
 	var productID int64
 	err := db.DB.QueryRow(context.Background(), sqlStatement, product.Name, product.Price, product.CreatedBy, product.CreatedAt).Scan(&productID)
 	if err != nil {
-		return nil, rest_err.NewInternalServerError("gagal menambahkan product", err)
+		return nil, sql_err.ParseError(err)
 	}
 	return &productID, nil
 }
@@ -52,11 +52,7 @@ func (u *productDao) Edit(input dto.Product) (*dto.Product, rest_err.APIError) {
 		sqlStatement, input.ProductID, input.Name, input.Price,
 	).Scan(&product.ProductID, &product.Name, &product.Price, &product.CreatedBy, &product.CreatedAt)
 	if err != nil {
-		if err == pgx.ErrNoRows {
-			return nil, rest_err.NewBadRequestError(fmt.Sprintf("Product dengan product_id %d tidak ditemukan", input.ProductID))
-		} else {
-			return nil, rest_err.NewInternalServerError("gagal mengedit product", err)
-		}
+		return nil, sql_err.ParseError(err)
 	}
 	return &product, nil
 }
@@ -68,7 +64,7 @@ func (u *productDao) Delete(productID int64) rest_err.APIError {
 	`
 	res, err := db.DB.Exec(context.Background(), sqlStatement, productID)
 	if err != nil {
-		return rest_err.NewInternalServerError("gagal saat penghapusan product", err)
+		return sql_err.ParseError(err)
 	}
 	if res.RowsAffected() != 1 {
 		return rest_err.NewBadRequestError(fmt.Sprintf("Product dengan product_id %d tidak ditemukan", productID))
@@ -89,11 +85,7 @@ func (u *productDao) Get(productID int64) (*dto.Product, rest_err.APIError) {
 	var product dto.Product
 	err := row.Scan(&product.ProductID, &product.Name, &product.Name, &product.Price, &product.CreatedBy, &product.CreatedAt)
 	if err != nil {
-		if err == pgx.ErrNoRows {
-			return nil, rest_err.NewBadRequestError(fmt.Sprintf("Product dengan ID %d tidak ditemukan", productID))
-		} else {
-			return nil, rest_err.NewInternalServerError("gagal mendapatkan detil product", err)
-		}
+		return nil, sql_err.ParseError(err)
 	}
 	return &product, nil
 }
@@ -112,7 +104,7 @@ func (u *productDao) Find() ([]dto.Product, rest_err.APIError) {
 		product := dto.Product{}
 		err := rows.Scan(&product.ProductID, &product.Name, &product.Price, &product.CreatedBy, &product.CreatedAt)
 		if err != nil {
-			return nil, rest_err.NewInternalServerError("gagal scan list product", err)
+			return nil, sql_err.ParseError(err)
 		}
 		products = append(products, product)
 	}
@@ -133,7 +125,7 @@ func (u *productDao) Search(productName dto.UppercaseString) ([]dto.Product, res
 		product := dto.Product{}
 		err := rows.Scan(&product.ProductID, &product.Name, &product.Price, &product.CreatedBy, &product.CreatedAt)
 		if err != nil {
-			return nil, rest_err.NewInternalServerError("gagal scan list product", err)
+			return nil, sql_err.ParseError(err)
 		}
 		products = append(products, product)
 	}

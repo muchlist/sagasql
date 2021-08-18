@@ -3,10 +3,10 @@ package dao
 import (
 	"context"
 	"fmt"
-	"github.com/jackc/pgx/v4"
 	"github.com/muchlist/sagasql/db"
 	"github.com/muchlist/sagasql/dto"
 	"github.com/muchlist/sagasql/utils/rest_err"
+	"github.com/muchlist/sagasql/utils/sql_err"
 )
 
 func NewUserDao() UserDaoAssumer {
@@ -32,7 +32,7 @@ func (u *userDao) Insert(user dto.User) (*string, rest_err.APIError) {
 	var userName dto.UppercaseString
 	err := db.DB.QueryRow(context.Background(), sqlStatement, user.Username, user.Email, user.Name, user.Password, user.Role, user.CreatedAt, user.UpdatedAt).Scan(&userName)
 	if err != nil {
-		return nil, rest_err.NewInternalServerError("gagal menambahkan user", err)
+		return nil, sql_err.ParseError(err)
 	}
 	usernameString := string(userName)
 	return &usernameString, nil
@@ -52,11 +52,7 @@ func (u *userDao) Edit(input dto.User) (*dto.User, rest_err.APIError) {
 		sqlStatement, input.Username, input.Email, input.Name, input.Role, input.UpdatedAt,
 	).Scan(&user.Username, &user.Email, &user.Name, &user.Role, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
-		if err == pgx.ErrNoRows {
-			return nil, rest_err.NewBadRequestError(fmt.Sprintf("User dengan username %s tidak ditemukan", input.Username))
-		} else {
-			return nil, rest_err.NewInternalServerError("gagal mengedit user", err)
-		}
+		return nil, sql_err.ParseError(err)
 	}
 	return &user, nil
 }
@@ -72,11 +68,7 @@ func (u *userDao) ChangePassword(input dto.User) (*dto.User, rest_err.APIError) 
 	var user dto.User
 	err := db.DB.QueryRow(context.Background(), sqlStatement, input.Username, input.Password, input.UpdatedAt).Scan(&user.Username, &user.Email, &user.Role, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
-		if err == pgx.ErrNoRows {
-			return nil, rest_err.NewBadRequestError(fmt.Sprintf("User dengan username %s tidak ditemukan", input.Username))
-		} else {
-			return nil, rest_err.NewInternalServerError("gagal mengganti password user", err)
-		}
+		return nil, sql_err.ParseError(err)
 	}
 	return &user, nil
 }
@@ -109,11 +101,7 @@ func (u *userDao) Get(userName string) (*dto.User, rest_err.APIError) {
 	var user dto.User
 	err := row.Scan(&user.Username, &user.Email, &user.Name, &user.Password, &user.Role, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
-		if err == pgx.ErrNoRows {
-			return nil, rest_err.NewBadRequestError(fmt.Sprintf("User dengan ID %s tidak ditemukan", userName))
-		} else {
-			return nil, rest_err.NewInternalServerError("gagal mendapatkan detil user", err)
-		}
+		return nil, sql_err.ParseError(err)
 	}
 	return &user, nil
 }
@@ -130,7 +118,7 @@ func (u *userDao) Find() ([]dto.User, rest_err.APIError) {
 		user := dto.User{}
 		err := rows.Scan(&user.Username, &user.Email, &user.Name, &user.Role, &user.CreatedAt, &user.UpdatedAt)
 		if err != nil {
-			return nil, rest_err.NewInternalServerError("gagal scan list user", err)
+			return nil, sql_err.ParseError(err)
 		}
 		users = append(users, user)
 	}

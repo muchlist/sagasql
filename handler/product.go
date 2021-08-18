@@ -53,7 +53,7 @@ func (u *productHandler) Insert(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	insertProductname, apiErr := u.service.InsertProduct(dto.Product{
+	insertProductID, apiErr := u.service.InsertProduct(dto.Product{
 		Name:      dto.UppercaseString(product.Name),
 		Price:     product.Price,
 		CreatedBy: claims.Identity,
@@ -63,7 +63,7 @@ func (u *productHandler) Insert(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	res := fmt.Sprintf("Register berhasil, ID: %s", *insertProductname)
+	res := fmt.Sprintf("Register berhasil, ID: %d", *insertProductID)
 	return c.JSON(fiber.Map{"error": nil, "data": res})
 }
 
@@ -100,6 +100,9 @@ func (u *productHandler) Find(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
+	if productList == nil {
+		productList = []dto.Product{}
+	}
 	return c.JSON(fiber.Map{"error": nil, "data": productList})
 }
 
