@@ -17,6 +17,7 @@ type ProductDaoAssumer interface {
 	Insert(product dto.Product) (*int64, rest_err.APIError)
 	Get(productID int64) (*dto.Product, rest_err.APIError)
 	Find() ([]dto.Product, rest_err.APIError)
+	Search(productName dto.UppercaseString) ([]dto.Product, rest_err.APIError)
 	Edit(productInput dto.Product) (*dto.Product, rest_err.APIError)
 	Delete(productID int64) rest_err.APIError
 }
@@ -99,7 +100,30 @@ func (u *productDao) Get(productID int64) (*dto.Product, rest_err.APIError) {
 
 func (u *productDao) Find() ([]dto.Product, rest_err.APIError) {
 	rows, err := db.DB.Query(context.Background(),
-		"SELECT product_id,  name, price, created_by, created_at FROM products;")
+		`	SELECT product_id, name, price, created_by, created_at 
+				FROM products 
+				ORDER BY name ASC;`)
+	if err != nil {
+		return nil, rest_err.NewInternalServerError("gagal mendapatkan daftar product", err)
+	}
+
+	var products []dto.Product
+	for rows.Next() {
+		product := dto.Product{}
+		err := rows.Scan(&product.ProductID, &product.Name, &product.Price, &product.CreatedBy, &product.CreatedAt)
+		if err != nil {
+			return nil, rest_err.NewInternalServerError("gagal scan list product", err)
+		}
+		products = append(products, product)
+	}
+	defer rows.Close()
+	return products, nil
+}
+
+func (u *productDao) Search(productName dto.UppercaseString) ([]dto.Product, rest_err.APIError) {
+
+	rows, err := db.DB.Query(context.Background(),
+		`SELECT product_id, name, price, created_by, created_at FROM products WHERE name LIKE '%'|| $1 || '%' ORDER BY name ASC ;`, productName)
 	if err != nil {
 		return nil, rest_err.NewInternalServerError("gagal mendapatkan daftar product", err)
 	}
