@@ -6,7 +6,7 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/muchlist/sagasql/db"
 	"github.com/muchlist/sagasql/dto"
-	"github.com/muchlist/sagasql/utils"
+	"github.com/muchlist/sagasql/utils/rest_err"
 )
 
 func NewUserDao() UserDaoAssumer {
