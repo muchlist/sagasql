@@ -6,6 +6,7 @@ type Product struct {
 	Price     int64           `json:"price"`
 	CreatedBy string          `json:"created_by"`
 	CreatedAt int64           `json:"crated_at"`
+	Image     string          `json:"image"`
 }
 
 type ProductReq struct {

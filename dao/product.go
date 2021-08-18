@@ -17,6 +17,7 @@ type ProductDaoAssumer interface {
 	Insert(product dto.Product) (*int64, rest_err.APIError)
 	Edit(productInput dto.Product) (*dto.Product, rest_err.APIError)
 	Delete(productID int64) rest_err.APIError
+	UploadImage(productID int64, imagePath string) (*dto.Product, rest_err.APIError)
 	Get(productID int64) (*dto.Product, rest_err.APIError)
 	Find() ([]dto.Product, rest_err.APIError)
 	Search(productName dto.UppercaseString) ([]dto.Product, rest_err.APIError)
@@ -43,14 +44,14 @@ func (u *productDao) Edit(input dto.Product) (*dto.Product, rest_err.APIError) {
 	UPDATE products 
 	SET name = $2, price = $3
 	WHERE product_id = $1 
-	RETURNING product_id, name, price, created_by, created_at;
+	RETURNING product_id, name, price, image, created_by, created_at;
 	`
 
 	var product dto.Product
 	err := db.DB.QueryRow(
 		context.Background(),
 		sqlStatement, input.ProductID, input.Name, input.Price,
-	).Scan(&product.ProductID, &product.Name, &product.Price, &product.CreatedBy, &product.CreatedAt)
+	).Scan(&product.ProductID, &product.Name, &product.Price, &product.Image, &product.CreatedBy, &product.CreatedAt)
 	if err != nil {
 		return nil, sql_err.ParseError(err)
 	}
@@ -73,17 +74,36 @@ func (u *productDao) Delete(productID int64) rest_err.APIError {
 	return nil
 }
 
+func (u *productDao) UploadImage(productID int64, imagePath string) (*dto.Product, rest_err.APIError) {
+	sqlStatement := `
+	UPDATE products 
+	SET image = $2
+	WHERE product_id = $1 
+	RETURNING product_id, name, price, image, created_by, created_at;
+	`
+
+	var product dto.Product
+	err := db.DB.QueryRow(
+		context.Background(),
+		sqlStatement, productID, imagePath,
+	).Scan(&product.ProductID, &product.Name, &product.Price, &product.Image, &product.CreatedBy, &product.CreatedAt)
+	if err != nil {
+		return nil, sql_err.ParseError(err)
+	}
+	return &product, nil
+}
+
 func (u *productDao) Get(productID int64) (*dto.Product, rest_err.APIError) {
 
 	sqlStatement := `
-	SELECT product_id, name, price,created_by, created_at 
+	SELECT product_id, name, price, image, created_by, created_at 
 	FROM products 
 	WHERE product_id = $1;
 	`
 	row := db.DB.QueryRow(context.Background(), sqlStatement, productID)
 
 	var product dto.Product
-	err := row.Scan(&product.ProductID, &product.Name, &product.Name, &product.Price, &product.CreatedBy, &product.CreatedAt)
+	err := row.Scan(&product.ProductID, &product.Name, &product.Price, &product.Image, &product.CreatedBy, &product.CreatedAt)
 	if err != nil {
 		return nil, sql_err.ParseError(err)
 	}
@@ -92,7 +112,7 @@ func (u *productDao) Get(productID int64) (*dto.Product, rest_err.APIError) {
 
 func (u *productDao) Find() ([]dto.Product, rest_err.APIError) {
 	rows, err := db.DB.Query(context.Background(),
-		`	SELECT product_id, name, price, created_by, created_at 
+		`	SELECT product_id, name, price, image, created_by, created_at 
 				FROM products 
 				ORDER BY name ASC;`)
 	if err != nil {
@@ -102,7 +122,7 @@ func (u *productDao) Find() ([]dto.Product, rest_err.APIError) {
 	var products []dto.Product
 	for rows.Next() {
 		product := dto.Product{}
-		err := rows.Scan(&product.ProductID, &product.Name, &product.Price, &product.CreatedBy, &product.CreatedAt)
+		err := rows.Scan(&product.ProductID, &product.Name, &product.Price, &product.Image, &product.CreatedBy, &product.CreatedAt)
 		if err != nil {
 			return nil, sql_err.ParseError(err)
 		}
@@ -115,7 +135,7 @@ func (u *productDao) Find() ([]dto.Product, rest_err.APIError) {
 func (u *productDao) Search(productName dto.UppercaseString) ([]dto.Product, rest_err.APIError) {
 
 	rows, err := db.DB.Query(context.Background(),
-		`SELECT product_id, name, price, created_by, created_at FROM products WHERE name LIKE '%'|| $1 || '%' ORDER BY name ASC ;`, productName)
+		`SELECT product_id, name, price, image, created_by, created_at FROM products WHERE name LIKE '%'|| $1 || '%' ORDER BY name ASC ;`, productName)
 	if err != nil {
 		return nil, rest_err.NewInternalServerError("gagal mendapatkan daftar product", err)
 	}
@@ -123,7 +143,7 @@ func (u *productDao) Search(productName dto.UppercaseString) ([]dto.Product, res
 	var products []dto.Product
 	for rows.Next() {
 		product := dto.Product{}
-		err := rows.Scan(&product.ProductID, &product.Name, &product.Price, &product.CreatedBy, &product.CreatedAt)
+		err := rows.Scan(&product.ProductID, &product.Name, &product.Price, &product.Image, &product.CreatedBy, &product.CreatedAt)
 		if err != nil {
 			return nil, sql_err.ParseError(err)
 		}
