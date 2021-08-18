@@ -25,68 +25,13 @@ type userService struct {
 }
 
 type UserServiceAssumer interface {
-	GetUser(username string) (*dto.User, rest_err.APIError)
-	FindUsers() ([]dto.User, rest_err.APIError)
+	Login(login dto.UserLoginRequest) (*dto.UserLoginResponse, rest_err.APIError)
 	InsertUser(user dto.User) (*string, rest_err.APIError)
 	EditUser(request dto.User) (*dto.User, rest_err.APIError)
-	DeleteUser(username string) rest_err.APIError
-	Login(login dto.UserLoginRequest) (*dto.UserLoginResponse, rest_err.APIError)
 	Refresh(payload dto.UserRefreshTokenRequest) (*dto.UserRefreshTokenResponse, rest_err.APIError)
-}
-
-// GetUser mendapatkan user dari database
-func (u *userService) GetUser(userName string) (*dto.User, rest_err.APIError) {
-	user, err := u.dao.Get(userName)
-	if err != nil {
-		return nil, err
-	}
-	return user, nil
-}
-
-// FindUsers
-func (u *userService) FindUsers() ([]dto.User, rest_err.APIError) {
-	userList, err := u.dao.Find()
-	if err != nil {
-		return nil, err
-	}
-	return userList, nil
-}
-
-// InsertUser melakukan register user
-func (u *userService) InsertUser(user dto.User) (*string, rest_err.APIError) {
-	hashPassword, err := u.crypto.GenerateHash(user.Password)
-	if err != nil {
-		return nil, err
-	}
-
-	user.Password = hashPassword
-	user.CreatedAt = time.Now().Unix()
-	user.UpdatedAt = time.Now().Unix()
-
-	insertedUserID, err := u.dao.Insert(user)
-	if err != nil {
-		return nil, err
-	}
-	return insertedUserID, nil
-}
-
-// EditUser
-func (u *userService) EditUser(request dto.User) (*dto.User, rest_err.APIError) {
-	request.UpdatedAt = time.Now().Unix()
-	result, err := u.dao.Edit(request)
-	if err != nil {
-		return nil, err
-	}
-	return result, nil
-}
-
-// DeleteUser
-func (u *userService) DeleteUser(userName string) rest_err.APIError {
-	err := u.dao.Delete(userName)
-	if err != nil {
-		return err
-	}
-	return nil
+	DeleteUser(username string) rest_err.APIError
+	GetUser(username string) (*dto.User, rest_err.APIError)
+	FindUsers() ([]dto.User, rest_err.APIError)
 }
 
 // Login
@@ -138,6 +83,34 @@ func (u *userService) Login(login dto.UserLoginRequest) (*dto.UserLoginResponse,
 	return &userResponse, nil
 }
 
+// InsertUser melakukan register user
+func (u *userService) InsertUser(user dto.User) (*string, rest_err.APIError) {
+	hashPassword, err := u.crypto.GenerateHash(user.Password)
+	if err != nil {
+		return nil, err
+	}
+
+	user.Password = hashPassword
+	user.CreatedAt = time.Now().Unix()
+	user.UpdatedAt = time.Now().Unix()
+
+	insertedUserID, err := u.dao.Insert(user)
+	if err != nil {
+		return nil, err
+	}
+	return insertedUserID, nil
+}
+
+// EditUser
+func (u *userService) EditUser(request dto.User) (*dto.User, rest_err.APIError) {
+	request.UpdatedAt = time.Now().Unix()
+	result, err := u.dao.Edit(request)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
 // Refresh token
 func (u *userService) Refresh(payload dto.UserRefreshTokenRequest) (*dto.UserRefreshTokenResponse, rest_err.APIError) {
 	token, apiErr := u.jwt.ValidateToken(payload.RefreshToken)
@@ -180,4 +153,31 @@ func (u *userService) Refresh(payload dto.UserRefreshTokenRequest) (*dto.UserRef
 	}
 
 	return &userRefreshTokenResponse, nil
+}
+
+// DeleteUser
+func (u *userService) DeleteUser(userName string) rest_err.APIError {
+	err := u.dao.Delete(userName)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// GetUser mendapatkan user dari database
+func (u *userService) GetUser(userName string) (*dto.User, rest_err.APIError) {
+	user, err := u.dao.Get(userName)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
+// FindUsers
+func (u *userService) FindUsers() ([]dto.User, rest_err.APIError) {
+	userList, err := u.dao.Find()
+	if err != nil {
+		return nil, err
+	}
+	return userList, nil
 }

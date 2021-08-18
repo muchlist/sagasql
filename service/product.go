@@ -17,36 +17,11 @@ type productService struct {
 }
 
 type ProductServiceAssumer interface {
-	GetProduct(productID int64) (*dto.Product, rest_err.APIError)
-	FindProducts(search string) ([]dto.Product, rest_err.APIError)
 	InsertProduct(product dto.Product) (*int64, rest_err.APIError)
 	EditProduct(request dto.Product) (*dto.Product, rest_err.APIError)
 	DeleteProduct(productID int64) rest_err.APIError
-}
-
-// GetProduct mendapatkan product dari database
-func (u *productService) GetProduct(productID int64) (*dto.Product, rest_err.APIError) {
-	product, err := u.dao.Get(productID)
-	if err != nil {
-		return nil, err
-	}
-	return product, nil
-}
-
-// FindProducts
-func (u *productService) FindProducts(search string) ([]dto.Product, rest_err.APIError) {
-
-	var productList []dto.Product
-	var err rest_err.APIError
-	if len(search) > 0 {
-		productList, err = u.dao.Search(dto.UppercaseString(search))
-	} else {
-		productList, err = u.dao.Find()
-	}
-	if err != nil {
-		return nil, err
-	}
-	return productList, nil
+	GetProduct(productID int64) (*dto.Product, rest_err.APIError)
+	FindProducts(search string) ([]dto.Product, rest_err.APIError)
 }
 
 // InsertProduct melakukan register product
@@ -74,4 +49,29 @@ func (u *productService) DeleteProduct(productID int64) rest_err.APIError {
 		return err
 	}
 	return nil
+}
+
+// GetProduct mendapatkan product dari database
+func (u *productService) GetProduct(productID int64) (*dto.Product, rest_err.APIError) {
+	product, err := u.dao.Get(productID)
+	if err != nil {
+		return nil, err
+	}
+	return product, nil
+}
+
+// FindProducts
+func (u *productService) FindProducts(search string) ([]dto.Product, rest_err.APIError) {
+
+	var productList []dto.Product
+	var err rest_err.APIError
+	if len(search) > 0 {
+		productList, err = u.dao.Search(dto.UppercaseString(search))
+	} else {
+		productList, err = u.dao.Find()
+	}
+	if err != nil {
+		return nil, err
+	}
+	return productList, nil
 }

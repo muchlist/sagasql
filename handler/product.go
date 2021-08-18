@@ -21,23 +21,6 @@ type productHandler struct {
 	service service.ProductServiceAssumer
 }
 
-// Get menampilkan product berdasarkan productID
-func (u *productHandler) Get(c *fiber.Ctx) error {
-	productIDStr := c.Params("id")
-	productID, err := strconv.ParseInt(productIDStr, 10, 64)
-	if err != nil {
-		apiErr := rest_err.NewBadRequestError("ID harus dalam bentuk angka")
-		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
-	}
-
-	product, apiErr := u.service.GetProduct(productID)
-	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
-	}
-
-	return c.JSON(fiber.Map{"error": nil, "data": product})
-}
-
 // Insert menambahkan product
 func (u *productHandler) Insert(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
@@ -91,21 +74,6 @@ func (u *productHandler) Edit(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"error": nil, "data": productEdited})
 }
 
-// Find menampilkan list product
-func (u *productHandler) Find(c *fiber.Ctx) error {
-	search := c.Query("search")
-
-	productList, apiErr := u.service.FindProducts(search)
-	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
-	}
-
-	if productList == nil {
-		productList = []dto.Product{}
-	}
-	return c.JSON(fiber.Map{"error": nil, "data": productList})
-}
-
 // Delete menghapus product, idealnya melalui middleware is_admin
 func (u *productHandler) Delete(c *fiber.Ctx) error {
 	productIDStr := c.Params("id")
@@ -121,4 +89,36 @@ func (u *productHandler) Delete(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{"error": nil, "data": fmt.Sprintf("product %d berhasil dihapus", productID)})
+}
+
+// Get menampilkan product berdasarkan productID
+func (u *productHandler) Get(c *fiber.Ctx) error {
+	productIDStr := c.Params("id")
+	productID, err := strconv.ParseInt(productIDStr, 10, 64)
+	if err != nil {
+		apiErr := rest_err.NewBadRequestError("ID harus dalam bentuk angka")
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
+	product, apiErr := u.service.GetProduct(productID)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
+	return c.JSON(fiber.Map{"error": nil, "data": product})
+}
+
+// Find menampilkan list product
+func (u *productHandler) Find(c *fiber.Ctx) error {
+	search := c.Query("search")
+
+	productList, apiErr := u.service.FindProducts(search)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
+	if productList == nil {
+		productList = []dto.Product{}
+	}
+	return c.JSON(fiber.Map{"error": nil, "data": productList})
 }

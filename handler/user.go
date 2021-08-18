@@ -20,15 +20,25 @@ type userHandler struct {
 	service service.UserServiceAssumer
 }
 
-// Get menampilkan user berdasarkan username
-func (u *userHandler) Get(c *fiber.Ctx) error {
-	userName := c.Params("username")
-	user, apiErr := u.service.GetUser(userName)
+// Login login
+func (u *userHandler) Login(c *fiber.Ctx) error {
+	var login dto.UserLoginRequest
+	if err := c.BodyParser(&login); err != nil {
+		apiErr := rest_err.NewBadRequestError(err.Error())
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
+	if login.Username == "" || login.Password == "" {
+		apiErr := rest_err.NewBadRequestError("username atau password tidak boleh kosong")
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
+	response, apiErr := u.service.Login(login)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	return c.JSON(fiber.Map{"error": nil, "data": user})
+	return c.JSON(fiber.Map{"error": nil, "data": response})
 }
 
 // Register menambahkan user
@@ -59,27 +69,6 @@ func (u *userHandler) Register(c *fiber.Ctx) error {
 
 	res := fmt.Sprintf("Register berhasil, ID: %s", *insertUsername)
 	return c.JSON(fiber.Map{"error": nil, "data": res})
-}
-
-// Login login
-func (u *userHandler) Login(c *fiber.Ctx) error {
-	var login dto.UserLoginRequest
-	if err := c.BodyParser(&login); err != nil {
-		apiErr := rest_err.NewBadRequestError(err.Error())
-		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
-	}
-
-	if login.Username == "" || login.Password == "" {
-		apiErr := rest_err.NewBadRequestError("username atau password tidak boleh kosong")
-		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
-	}
-
-	response, apiErr := u.service.Login(login)
-	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
-	}
-
-	return c.JSON(fiber.Map{"error": nil, "data": response})
 }
 
 // Edit mengedit user
@@ -117,6 +106,35 @@ func (u *userHandler) RefreshToken(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"error": nil, "data": response})
 }
 
+// Delete menghapus user, idealnya melalui middleware is_admin
+func (u *userHandler) Delete(c *fiber.Ctx) error {
+	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
+	username := c.Params("username")
+
+	if claims.Identity == username {
+		apiErr := rest_err.NewBadRequestError("Tidak dapat menghapus akun terkait (diri sendiri)!")
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
+	apiErr := u.service.DeleteUser(username)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
+	return c.JSON(fiber.Map{"error": nil, "data": fmt.Sprintf("user %s berhasil dihapus", username)})
+}
+
+// Get menampilkan user berdasarkan username
+func (u *userHandler) Get(c *fiber.Ctx) error {
+	userName := c.Params("username")
+	user, apiErr := u.service.GetUser(userName)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
+	return c.JSON(fiber.Map{"error": nil, "data": user})
+}
+
 // GetProfile mengembalikan user yang sedang login
 func (u *userHandler) GetProfile(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
@@ -140,22 +158,4 @@ func (u *userHandler) Find(c *fiber.Ctx) error {
 		userList = []dto.User{}
 	}
 	return c.JSON(fiber.Map{"error": nil, "data": userList})
-}
-
-// Delete menghapus user, idealnya melalui middleware is_admin
-func (u *userHandler) Delete(c *fiber.Ctx) error {
-	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
-	username := c.Params("username")
-
-	if claims.Identity == username {
-		apiErr := rest_err.NewBadRequestError("Tidak dapat menghapus akun terkait (diri sendiri)!")
-		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
-	}
-
-	apiErr := u.service.DeleteUser(username)
-	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
-	}
-
-	return c.JSON(fiber.Map{"error": nil, "data": fmt.Sprintf("user %s berhasil dihapus", username)})
 }

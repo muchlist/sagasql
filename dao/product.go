@@ -15,11 +15,11 @@ func NewProductDao() ProductDaoAssumer {
 
 type ProductDaoAssumer interface {
 	Insert(product dto.Product) (*int64, rest_err.APIError)
+	Edit(productInput dto.Product) (*dto.Product, rest_err.APIError)
+	Delete(productID int64) rest_err.APIError
 	Get(productID int64) (*dto.Product, rest_err.APIError)
 	Find() ([]dto.Product, rest_err.APIError)
 	Search(productName dto.UppercaseString) ([]dto.Product, rest_err.APIError)
-	Edit(productInput dto.Product) (*dto.Product, rest_err.APIError)
-	Delete(productID int64) rest_err.APIError
 }
 
 type productDao struct {
