@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"os"
 )
 
 const (
@@ -17,16 +18,16 @@ const (
 var (
 	// DB global variable agar database dapat diakses di dao
 	DB *pgxpool.Pool
-
-	host     = "localhost" // os.Getenv(postgreUserHost)     // localhost
-	port     = "5432"      // os.Getenv(postgreUserPort)     // 5432
-	user     = "postgres"  // os.Getenv(postgreUserUName)    // postgres
-	password = "postgres"  // os.Getenv(postgreUserPassword) // postgres
 )
 
 // InitDB menginisiasi database
 // responsenya digunakan untuk memutus koneksi apabila main program dihentikan
 func InitDB() *pgxpool.Pool {
+
+	host := os.Getenv(postgreUserHost)         // localhost
+	port := os.Getenv(postgreUserPort)         // 5432
+	user := os.Getenv(postgreUserUName)        // postgres
+	password := os.Getenv(postgreUserPassword) // postgres
 
 	// databaseUrl := "postgres://username:password@localhost:5432/database_name"
 	databaseUrl := fmt.Sprintf("postgres://%s:%s@%s:%s/%s", user, password, host, port, dbname)
