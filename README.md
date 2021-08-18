@@ -1,4 +1,5 @@
 # sagasql
+Backend dengan fiber, postgresql, jwt
 
 ## Environment variable
 Aplikasi membutuhkan variable yang wajib diisi untuk koneksi ke database dan keamanan JWT
