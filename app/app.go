@@ -4,11 +4,16 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/muchlist/sagasql/db"
 	"log"
 )
 
 // RunApp menjalankan framework fiber
 func RunApp() {
+
+	// Inisiasi database pool
+	dbPool := db.InitDB()
+	defer dbPool.Close()
 
 	// Inisiasi fiber
 	app := fiber.New()
