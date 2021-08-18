@@ -20,7 +20,7 @@ const (
 
 // NormalAuth memerlukan salah satu role inputan agar diloloskan ke proses berikutnya
 // token tidak perlu fresh
-func NormalAuthOr(rolesReq ...string) fiber.Handler {
+func NormalAuth(rolesReq ...string) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		authHeader := c.Get(headerKey)
 		claims, err := authHaveRoleValidator(authHeader, false, rolesReq)

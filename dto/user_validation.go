@@ -14,14 +14,14 @@ func (u UserRegisterReq) Validate() error {
 		validation.Field(&u.Username, validation.Required),
 		validation.Field(&u.Email, validation.Required, is.Email),
 		validation.Field(&u.Name, validation.Required),
-		validation.Field(&u.Roles, validation.Required),
+		validation.Field(&u.Role, validation.Required),
 		validation.Field(&u.Password, validation.Required, validation.Length(3, 20)),
 	); err != nil {
 		return err
 	}
 
 	// validate role
-	if !sfunc.InSlice(u.Roles, config.GetRolesAvailable()) {
+	if !sfunc.InSlice(u.Role, config.GetRolesAvailable()) {
 		return fmt.Errorf("role yang dimasukkan tidak tersedia. gunakan %s", config.GetRolesAvailable())
 	}
 

@@ -11,9 +11,8 @@ const (
 )
 
 type CustomClaim struct {
-	Identity    int64
+	Identity    string
 	Name        string
-	UserName    string
 	Exp         int64
 	ExtraMinute time.Duration
 	Type        int

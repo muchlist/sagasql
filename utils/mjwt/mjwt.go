@@ -15,7 +15,6 @@ const (
 
 	identityKey  = "identity"
 	nameKey      = "name"
-	userNameKey  = "username"
 	rolesKey     = "roles"
 	tokenTypeKey = "type"
 	expKey       = "exp"
@@ -57,7 +56,6 @@ func (j *jwtUtils) GenerateToken(claims CustomClaim) (string, rest_err.APIError)
 	jwtClaim := jwt.MapClaims{}
 	jwtClaim[identityKey] = claims.Identity
 	jwtClaim[nameKey] = claims.Name
-	jwtClaim[userNameKey] = claims.UserName
 	jwtClaim[rolesKey] = claims.Roles
 	jwtClaim[expKey] = expired
 	jwtClaim[tokenTypeKey] = claims.Type
@@ -82,9 +80,8 @@ func (j *jwtUtils) ReadToken(token *jwt.Token) (*CustomClaim, rest_err.APIError)
 	}
 
 	customClaim := CustomClaim{
-		Identity: int64(claims[identityKey].(float64)),
+		Identity: claims[identityKey].(string),
 		Name:     claims[nameKey].(string),
-		UserName: claims[userNameKey].(string),
 		Exp:      int64(claims[expKey].(float64)),
 		Roles:    claims[rolesKey].(string),
 		Type:     int(claims[tokenTypeKey].(float64)),

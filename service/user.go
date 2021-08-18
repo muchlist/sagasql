@@ -1,4 +1,4 @@
-package user_service
+package service
 
 import (
 	"github.com/muchlist/sagasql/dao"
@@ -25,18 +25,18 @@ type userService struct {
 }
 
 type UserServiceAssumer interface {
-	GetUser(userID int64) (*dto.User, rest_err.APIError)
+	GetUser(username string) (*dto.User, rest_err.APIError)
 	FindUsers() ([]dto.User, rest_err.APIError)
-	InsertUser(user dto.User) (*int64, rest_err.APIError)
+	InsertUser(user dto.User) (*string, rest_err.APIError)
 	EditUser(request dto.User) (*dto.User, rest_err.APIError)
-	DeleteUser(userID int64) rest_err.APIError
-	Login(login dto.User) (*dto.UserLoginResponse, rest_err.APIError)
+	DeleteUser(username string) rest_err.APIError
+	Login(login dto.UserLoginRequest) (*dto.UserLoginResponse, rest_err.APIError)
 	Refresh(payload dto.UserRefreshTokenRequest) (*dto.UserRefreshTokenResponse, rest_err.APIError)
 }
 
 // GetUser mendapatkan user dari database
-func (u *userService) GetUser(userID int64) (*dto.User, rest_err.APIError) {
-	user, err := u.dao.Get(userID)
+func (u *userService) GetUser(userName string) (*dto.User, rest_err.APIError) {
+	user, err := u.dao.Get(userName)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func (u *userService) FindUsers() ([]dto.User, rest_err.APIError) {
 }
 
 // InsertUser melakukan register user
-func (u *userService) InsertUser(user dto.User) (*int64, rest_err.APIError) {
+func (u *userService) InsertUser(user dto.User) (*string, rest_err.APIError) {
 	hashPassword, err := u.crypto.GenerateHash(user.Password)
 	if err != nil {
 		return nil, err
@@ -63,11 +63,11 @@ func (u *userService) InsertUser(user dto.User) (*int64, rest_err.APIError) {
 	user.CreatedAt = time.Now().Unix()
 	user.UpdatedAt = time.Now().Unix()
 
-	insertedID, err := u.dao.Insert(user)
+	insertedUserID, err := u.dao.Insert(user)
 	if err != nil {
 		return nil, err
 	}
-	return insertedID, nil
+	return insertedUserID, nil
 }
 
 // EditUser
@@ -81,8 +81,8 @@ func (u *userService) EditUser(request dto.User) (*dto.User, rest_err.APIError) 
 }
 
 // DeleteUser
-func (u *userService) DeleteUser(userID int64) rest_err.APIError {
-	err := u.dao.Delete(userID)
+func (u *userService) DeleteUser(userName string) rest_err.APIError {
+	err := u.dao.Delete(userName)
 	if err != nil {
 		return err
 	}
@@ -90,10 +90,10 @@ func (u *userService) DeleteUser(userID int64) rest_err.APIError {
 }
 
 // Login
-func (u *userService) Login(login dto.User) (*dto.UserLoginResponse, rest_err.APIError) {
-	user, err := u.dao.Get(login.UserID)
+func (u *userService) Login(login dto.UserLoginRequest) (*dto.UserLoginResponse, rest_err.APIError) {
+	user, err := u.dao.Get(login.Username)
 	if err != nil {
-		return nil, err
+		return nil, rest_err.NewBadRequestError("Username atau password tidak valid")
 	}
 
 	if !u.crypto.IsPWAndHashPWMatch(login.Password, user.Password) {
@@ -101,9 +101,8 @@ func (u *userService) Login(login dto.User) (*dto.UserLoginResponse, rest_err.AP
 	}
 
 	AccessClaims := mjwt.CustomClaim{
-		Identity:    user.UserID,
+		Identity:    string(user.Username),
 		Name:        user.Name,
-		UserName:    user.Username,
 		Roles:       user.Role,
 		ExtraMinute: 60 * 24 * 1, // 1 Hour
 		Type:        mjwt.Access,
@@ -111,9 +110,8 @@ func (u *userService) Login(login dto.User) (*dto.UserLoginResponse, rest_err.AP
 	}
 
 	RefreshClaims := mjwt.CustomClaim{
-		Identity:    user.UserID,
+		Identity:    string(user.Username),
 		Name:        user.Name,
-		UserName:    user.Username,
 		Roles:       user.Role,
 		ExtraMinute: 60 * 24 * 10, // 60 days
 		Type:        mjwt.Refresh,
@@ -129,8 +127,7 @@ func (u *userService) Login(login dto.User) (*dto.UserLoginResponse, rest_err.AP
 	}
 
 	userResponse := dto.UserLoginResponse{
-		UserID:       user.UserID,
-		Username:     user.Username,
+		Username:     string(user.Username),
 		Email:        user.Email,
 		Name:         user.Name,
 		AccessToken:  accessToken,
@@ -164,9 +161,8 @@ func (u *userService) Refresh(payload dto.UserRefreshTokenRequest) (*dto.UserRef
 	}
 
 	AccessClaims := mjwt.CustomClaim{
-		Identity:    user.UserID,
-		UserName:    user.Username,
-		Name:        user.Username,
+		Identity:    string(user.Username),
+		Name:        user.Name,
 		Roles:       user.Role,
 		ExtraMinute: time.Duration(60 * 60 * 1),
 		Type:        mjwt.Access,
