@@ -122,3 +122,28 @@ func (u *productHandler) Find(c *fiber.Ctx) error {
 	}
 	return c.JSON(fiber.Map{"error": nil, "data": productList})
 }
+
+// UploadImage melakukan pengambilan file menggunakan form "image" mengecek ekstensi dan memasukkannya ke database
+func (u *productHandler) UploadImage(c *fiber.Ctx) error {
+	productIDStr := c.Params("id")
+	productID, err := strconv.ParseInt(productIDStr, 10, 64)
+	if err != nil {
+		apiErr := rest_err.NewBadRequestError("ID harus dalam bentuk angka")
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
+	randomName := fmt.Sprintf("%d-%d", productID, time.Now().Unix())
+	// simpan image
+	pathInDB, apiErr := saveImage(c, "product", randomName)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
+	// update path image di database
+	productResult, apiErr := u.service.PutImage(productID, pathInDB)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
+	return c.JSON(fiber.Map{"error": nil, "data": productResult})
+}

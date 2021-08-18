@@ -50,6 +50,7 @@ func RunApp() {
 	api.Post("/products", middle.NormalAuth(), productHandler.Insert)
 	api.Put("/products/:id", middle.NormalAuth(), productHandler.Edit)
 	api.Delete("/products/:id", middle.NormalAuth(), productHandler.Delete)
+	api.Post("/products-image/:id", middle.NormalAuth(), productHandler.UploadImage) // <- upload image multipath
 
 	if err := app.Listen(":3500"); err != nil {
 		log.Fatalf("Aplikasi tidak dapat dijalankan. Error : %s", err.Error())

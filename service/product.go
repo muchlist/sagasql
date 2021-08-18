@@ -19,6 +19,7 @@ type productService struct {
 type ProductServiceAssumer interface {
 	InsertProduct(product dto.Product) (*int64, rest_err.APIError)
 	EditProduct(request dto.Product) (*dto.Product, rest_err.APIError)
+	PutImage(id int64, imagePath string) (*dto.Product, rest_err.APIError)
 	DeleteProduct(productID int64) rest_err.APIError
 	GetProduct(productID int64) (*dto.Product, rest_err.APIError)
 	FindProducts(search string) ([]dto.Product, rest_err.APIError)
@@ -49,6 +50,15 @@ func (u *productService) DeleteProduct(productID int64) rest_err.APIError {
 		return err
 	}
 	return nil
+}
+
+// PutImage memasukkan lokasi file (path) ke dalam database
+func (u *productService) PutImage(id int64, imagePath string) (*dto.Product, rest_err.APIError) {
+	product, err := u.dao.UploadImage(id, imagePath)
+	if err != nil {
+		return nil, err
+	}
+	return product, nil
 }
 
 // GetProduct mendapatkan product dari database
