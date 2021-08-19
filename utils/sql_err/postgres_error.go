@@ -1,10 +1,12 @@
 package sql_err
 
 import (
+	"errors"
 	"fmt"
+	"github.com/jackc/pgconn"
+	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v4"
 	"github.com/muchlist/sagasql/utils/rest_err"
-	"strings"
 )
 
 func ParseError(err error) rest_err.APIError {
@@ -12,17 +14,14 @@ func ParseError(err error) rest_err.APIError {
 		return rest_err.NewBadRequestError(fmt.Sprintf("tidak ada data yang sesuai dengan id yang diberikan"))
 	}
 
-	if strings.Contains(err.Error(), "23505") {
-		return rest_err.NewBadRequestError("input yang diberikan mengalami konflik dengan data existing")
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) {
+		switch pgErr.Code {
+		case pgerrcode.UniqueViolation:
+			return rest_err.NewBadRequestError("input yang diberikan mengalami konflik dengan data existing")
+		case pgerrcode.UndefinedColumn:
+			return rest_err.NewInternalServerError("galat pada query database, column tidak tersedia", err)
+		}
 	}
-
-	if strings.Contains(err.Error(), "42703") {
-		return rest_err.NewInternalServerError("galat pada query database", err)
-	}
-
-	if strings.Contains(err.Error(), "must equal") {
-		return rest_err.NewInternalServerError("galat pada query database", err)
-	}
-
 	return rest_err.NewInternalServerError("galat", err)
 }
