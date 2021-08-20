@@ -7,6 +7,7 @@ import (
 	"github.com/muchlist/sagasql/config"
 	"github.com/muchlist/sagasql/db"
 	"github.com/muchlist/sagasql/middle"
+	"github.com/muchlist/sagasql/utils/mjwt"
 	"log"
 )
 
@@ -19,6 +20,9 @@ func RunApp() {
 
 	// Inisiasi fiber
 	app := fiber.New()
+
+	// Inisiasi jwt
+	mjwt.Init()
 
 	// memasang middleware
 	app.Use(logger.New())
