@@ -118,7 +118,7 @@ func (u *productDao) Find() ([]dto.Product, rest_err.APIError) {
 	if err != nil {
 		return nil, rest_err.NewInternalServerError("gagal mendapatkan daftar product", err)
 	}
-
+	defer rows.Close()
 	var products []dto.Product
 	for rows.Next() {
 		product := dto.Product{}
@@ -128,7 +128,6 @@ func (u *productDao) Find() ([]dto.Product, rest_err.APIError) {
 		}
 		products = append(products, product)
 	}
-	defer rows.Close()
 	return products, nil
 }
 
@@ -140,6 +139,8 @@ func (u *productDao) Search(productName dto.UppercaseString) ([]dto.Product, res
 		return nil, rest_err.NewInternalServerError("gagal mendapatkan daftar product", err)
 	}
 
+	defer rows.Close()
+
 	var products []dto.Product
 	for rows.Next() {
 		product := dto.Product{}
@@ -149,6 +150,5 @@ func (u *productDao) Search(productName dto.UppercaseString) ([]dto.Product, res
 		}
 		products = append(products, product)
 	}
-	defer rows.Close()
 	return products, nil
 }

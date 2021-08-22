@@ -114,6 +114,7 @@ func (u *userDao) Find() ([]dto.User, rest_err.APIError) {
 		return nil, rest_err.NewInternalServerError("gagal mendapatkan daftar user", err)
 	}
 
+	defer rows.Close()
 	var users []dto.User
 	for rows.Next() {
 		user := dto.User{}
@@ -123,6 +124,5 @@ func (u *userDao) Find() ([]dto.User, rest_err.APIError) {
 		}
 		users = append(users, user)
 	}
-	defer rows.Close()
 	return users, nil
 }
